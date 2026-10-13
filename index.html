@@ -11,6 +11,7 @@
 @media(max-width:800px){.hero{grid-template-columns:1fr}.hero-card{display:none}.services{grid-template-columns:repeat(2,1fr)}.content-grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.topbar{align-items:flex-start;flex-direction:column}.nav{width:100%}.nav button{flex:1}.app{padding:0 12px 35px}.hero{padding:23px}.panel{padding:17px}}
 @media(max-width:480px){.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.services{gap:9px}.service{padding:14px}.section-head{align-items:flex-start;flex-direction:column}.stats{gap:8px}.stat{padding:12px}.stat strong{font-size:22px}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="app">
@@ -83,7 +84,8 @@
   <main id="trackView" class="hidden">
     <section class="section"><div class="section-head"><div><h2>My bookings</h2><p class="sub">Look up your requests using your phone number.</p></div></div>
       <div class="panel">
-        <div class="row"><div class="field" style="flex:1;min-width:210px"><label for="lookupPhone">Phone number used for booking</label><input id="lookupPhone" placeholder="Enter your phone number"></div><button class="btn primary" id="lookupBtn" style="align-self:end">Find bookings</button></div>
+        <div class="row"><div class="field" style="flex:1;min-width:210px"><label for="lookupPhone">Private tracking token</label>
+<input id="lookupPhone" placeholder="Paste your 64-character token"> style="align-self:end">Find bookings</button></div>
         <div id="customerBookings" class="section"><div class="empty">Enter your phone number to view your bookings on this device.</div></div>
       </div>
     </section>
@@ -114,7 +116,15 @@
 </div>
 <div id="toast" class="toast" role="status"></div>
 <script>
-const counties = ["Baringo","Bomet","Bungoma","Busia","Elgeyo-Marakwet","Embu","Garissa","Homa Bay","Isiolo","Kajiado","Kakamega","Kericho","Kiambu","Kilifi","Kirinyaga","Kisii","Kisumu","Kitui","Kwale","Laikipia","Lamu","Machakos","Makueni","Mandera","Marsabit","Meru","Migori","Mombasa","Murang’a","Nairobi","Nakuru","Nandi","Narok","Nyamira","Nyandarua","Nyeri","Samburu","Siaya","Taita-Taveta","Tana River","Tharaka-Nithi","Trans Nzoia","Turkana","Uasin Gishu","Vihiga","Wajir","West Pokot"];
+const counties =
+const SUPABASE_URL = "https://keekaeagrknaymbhrxtu.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "YOUR_SUPABASE_PUBLISHABLE_KEY";
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+ ["Baringo","Bomet","Bungoma","Busia","Elgeyo-Marakwet","Embu","Garissa","Homa Bay","Isiolo","Kajiado","Kakamega","Kericho","Kiambu","Kilifi","Kirinyaga","Kisii","Kisumu","Kitui","Kwale","Laikipia","Lamu","Machakos","Makueni","Mandera","Marsabit","Meru","Migori","Mombasa","Murang’a","Nairobi","Nakuru","Nandi","Narok","Nyamira","Nyandarua","Nyeri","Samburu","Siaya","Taita-Taveta","Tana River","Tharaka-Nithi","Trans Nzoia","Turkana","Uasin Gishu","Vihiga","Wajir","West Pokot"];
 const statusClass = {"Pending":"pending","Accepted":"accepted","In progress":"progress","Completed":"completed","Cancelled":"cancelled"};
 const countySelect = document.getElementById('county');
 counties.forEach(c=>{const o=document.createElement('option');o.textContent=c;o.value=c;countySelect.appendChild(o)});
@@ -129,7 +139,120 @@ function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 function money(v){return "KSh "+Number(v||0).toLocaleString("en-KE")}
 function fmtDate(d){if(!d)return "—";return new Date(d+"T00:00:00").toLocaleDateString("en-KE",{day:"numeric",month:"short",year:"numeric"})}
 document.querySelectorAll('.service').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.service').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selectedService=btn.dataset.service;document.getElementById('service').value=selectedService;updateEstimate()}));
-document.getElementById('service').addEventListener('change',e=>{selectedService=e.target.value;document.querySelectorAll('.service').forEach(b=>b.classList.toggle('selected',b.dataset.service===selectedService));updateEstimate()});
+
+document.getElementById('bookingForm').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const form = e.currentTarget;
+  const submitButton = form.querySelector('button[type="submit"]');
+  const successBox = document.getElementById('bookingSuccess');
+
+  const value = id => document.getElementById(id).value.trim();
+
+  const budgetText = value('budget');
+
+  const booking = {
+    p_customer_name: value('customerName'),
+    p_phone: value('phone'),
+    p_service: value('service'),
+    p_county: value('county'),
+    p_location: value('location'),
+    p_preferred_date: value('date'),
+    p_preferred_time: value('time'),
+    p_details: value('details'),
+    p_urgency: value('urgency'),
+    p_item_budget: budgetText ? Number(budgetText) : null
+  };
+
+  submitButton.disabled = true;
+  submitButton.textContent = 'Submitting…';
+  successBox.classList.add('hidden');
+
+  try {
+    const { data, error } = await supabaseClient.rpc(
+      'create_my_errands_booking',
+      booking
+    );
+
+    if (error) throw error;
+
+    if (!data || !data.booking_ref || !data.tracking_token) {
+      throw new Error('The booking was not confirmed by the server. Please contact support before trying again.');
+    }
+
+    const reference = data.booking_ref;
+    const token = data.tracking_token;
+
+    successBox.classList.remove('hidden');
+    successBox.replaceChildren();
+
+    const heading = document.createElement('strong');
+    heading.textContent = 'Booking request submitted!';
+    successBox.appendChild(heading);
+    successBox.appendChild(document.createElement('br'));
+
+    const refLine = document.createElement('p');
+    refLine.textContent = 'Your booking reference: ' + reference;
+    successBox.appendChild(refLine);
+
+    const statusLine = document.createElement('p');
+    statusLine.textContent = 'Status: Pending review';
+    successBox.appendChild(statusLine);
+
+    const tokenLabel = document.createElement('p');
+    tokenLabel.textContent =
+      'Your private tracking token is shown below. Save it somewhere safe; it will not be shown again.';
+    successBox.appendChild(tokenLabel);
+
+    const tokenField = document.createElement('textarea');
+    tokenField.readOnly = true;
+    tokenField.value = token;
+    tokenField.setAttribute('aria-label', 'Private booking tracking token');
+    successBox.appendChild(tokenField);
+
+    const copyButton = document.createElement('button');
+    copyButton.type = 'button';
+    copyButton.className = 'btn';
+    copyButton.textContent = 'Copy tracking token';
+    copyButton.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(token);
+        toast('Tracking token copied');
+      } catch {
+        tokenField.focus();
+        tokenField.select();
+        toast('Select and copy the token manually');
+      }
+    });
+    successBox.appendChild(copyButton);
+
+    const instruction = document.createElement('p');
+    instruction.textContent =
+      'Use My bookings and enter this token to check your request. Our team must confirm availability and the quote.';
+    successBox.appendChild(instruction);
+
+    form.reset();
+    document.getElementById('service').value = selectedService;
+    document.querySelectorAll('.service').forEach(button => {
+      button.classList.toggle(
+        'selected',
+        button.dataset.service === selectedService
+      );
+    });
+    updateEstimate();
+    toast('Booking saved to Supabase');
+  } catch (error) {
+    console.error('Booking submission failed:', error);
+    successBox.classList.remove('hidden');
+    successBox.textContent =
+      'We could not submit your booking. Please check your connection and try again. If the problem continues, contact support.';
+    toast('Booking submission failed');
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = 'Submit booking request →';
+  }
+});
+
 function updateEstimate(){document.getElementById('estimate').textContent="Quote after review"; }
 document.getElementById('bookingForm').addEventListener('submit',e=>{
  e.preventDefault();const f=id=>document.getElementById(id).value.trim();
@@ -142,7 +265,79 @@ document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',(
 function showView(v){document.getElementById('homeView').classList.toggle('hidden',v!=='home');document.getElementById('trackView').classList.toggle('hidden',v!=='track');document.getElementById('adminView').classList.toggle('hidden',v!=='admin');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v==='admin')renderAdmin();if(v==='track')document.getElementById('lookupPhone').focus({preventScroll:true});window.scrollTo({top:0,behavior:'smooth'})}
 document.getElementById('lookupBtn').addEventListener('click',renderCustomerBookings);
 document.getElementById('lookupPhone').addEventListener('keydown',e=>{if(e.key==='Enter')renderCustomerBookings()});
-function renderCustomerBookings(){const phone=document.getElementById('lookupPhone').value.replace(/\s/g,'');const target=document.getElementById('customerBookings');if(!phone){target.innerHTML='<div class="empty">Enter the phone number used for the booking.</div>';return}const items=loadBookings().filter(b=>b.phone.replace(/\s/g,'')===phone);if(!items.length){target.innerHTML='<div class="empty">No bookings found for that number on this device. Check the number or contact support.</div>';return}target.innerHTML=items.map(b=>`<div class="mini" style="align-items:flex-start;margin-top:10px"><div class="icon">${b.service==='Shopping'?'🛍️':b.service==='Delivery'?'📦':b.service==='Accompaniment'?'🤝':'🧾'}</div><div style="flex:1;min-width:0"><div class="row" style="justify-content:space-between"><strong>${esc(b.service)} · ${esc(b.id)}</strong><span class="pill ${statusClass[b.status]||''}">${esc(b.status)}</span></div><small>${esc(b.county)} · ${esc(b.location)} · ${fmtDate(b.date)} · ${esc(b.time)}</small><p style="margin:6px 0">${esc(b.details)}</p>${b.quote?`<strong>Service quote: ${money(b.quote)}</strong>`:'<small>Quote pending admin review</small>'}${b.assistant?`<div><small>Assigned assistant: ${esc(b.assistant)}</small></div>`:''}${b.adminNotes?`<div><small>Update: ${esc(b.adminNotes)}</small></div>`:''}</div></div>`).join('')}
+ 
+async function renderCustomerBookings() {
+  const token = document.getElementById('lookupPhone').value.trim();
+  const target = document.getElementById('customerBookings');
+
+  if (!/^[a-f0-9]{64}$/i.test(token)) {
+    target.textContent = 'Enter the complete tracking token saved when you submitted your booking.';
+    return;
+  }
+
+  target.textContent = 'Checking your booking…';
+
+  try {
+    const { data, error } = await supabaseClient.rpc(
+      'get_my_errands_booking',
+      { p_tracking_token: token }
+    );
+
+    if (error) throw error;
+
+    if (!data || !data.length) {
+      target.textContent = 'No booking was found. Check your token and try again.';
+      return;
+    }
+
+    const b = data[0];
+    target.replaceChildren();
+
+    const card = document.createElement('div');
+    card.className = 'mini';
+    card.style.alignItems = 'flex-start';
+
+    const content = document.createElement('div');
+    content.style.minWidth = '0';
+
+    const title = document.createElement('strong');
+    title.textContent = b.service + ' · ' + b.booking_ref;
+    content.appendChild(title);
+
+    const status = document.createElement('p');
+    status.textContent = 'Status: ' + b.status;
+    content.appendChild(status);
+
+    const details = document.createElement('p');
+    details.textContent =
+      b.county + ' · ' + b.location + ' · ' +
+      fmtDate(b.preferred_date) + ' · ' + b.preferred_time;
+    content.appendChild(details);
+
+    const task = document.createElement('p');
+    task.textContent = b.details;
+    content.appendChild(task);
+
+    const quote = document.createElement('p');
+    quote.textContent = b.quote == null
+      ? 'Service quote pending review'
+      : 'Service quote: ' + money(b.quote);
+    content.appendChild(quote);
+
+    if (b.assistant) {
+      const assistant = document.createElement('p');
+      assistant.textContent = 'Assigned assistant: ' + b.assistant;
+      content.appendChild(assistant);
+    }
+
+    card.appendChild(content);
+    target.appendChild(card);
+  } catch (error) {
+    console.error('Booking lookup failed:', error);
+    target.textContent =
+      'We could not check the booking right now. Please try again later.';
+  }
+}phone=document.getElementById('lookupPhone').value.replace(/\s/g,'');const target=document.getElementById('customerBookings');if(!phone){target.innerHTML='<div class="empty">Enter the phone number used for the booking.</div>';return}const items=loadBookings().filter(b=>b.phone.replace(/\s/g,'')===phone);if(!items.length){target.innerHTML='<div class="empty">No bookings found for that number on this device. Check the number or contact support.</div>';return}target.innerHTML=items.map(b=>`<div class="mini" style="align-items:flex-start;margin-top:10px"><div class="icon">${b.service==='Shopping'?'🛍️':b.service==='Delivery'?'📦':b.service==='Accompaniment'?'🤝':'🧾'}</div><div style="flex:1;min-width:0"><div class="row" style="justify-content:space-between"><strong>${esc(b.service)} · ${esc(b.id)}</strong><span class="pill ${statusClass[b.status]||''}">${esc(b.status)}</span></div><small>${esc(b.county)} · ${esc(b.location)} · ${fmtDate(b.date)} · ${esc(b.time)}</small><p style="margin:6px 0">${esc(b.details)}</p>${b.quote?`<strong>Service quote: ${money(b.quote)}</strong>`:'<small>Quote pending admin review</small>'}${b.assistant?`<div><small>Assigned assistant: ${esc(b.assistant)}</small></div>`:''}${b.adminNotes?`<div><small>Update: ${esc(b.adminNotes)}</small></div>`:''}</div></div>`).join('')}
 document.getElementById('adminLogin').addEventListener('click',()=>{if(document.getElementById('adminPin').value==='2468'){adminUnlocked=true;document.getElementById('adminGate').classList.add('hidden');document.getElementById('adminContent').classList.remove('hidden');renderAdmin();toast('Demo dashboard opened')}else toast('Incorrect passcode')});
 document.getElementById('adminPin').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('adminLogin').click()});
 document.getElementById('statusTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-filter]');if(!b)return;currentFilter=b.dataset.filter;document.querySelectorAll('#statusTabs button').forEach(x=>x.classList.toggle('active',x===b));renderAdmin()});
