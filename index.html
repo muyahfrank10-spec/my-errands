@@ -259,11 +259,6 @@ document.getElementById('bookingForm').addEventListener('submit', async e => {
 });
 
 function updateEstimate(){document.getElementById('estimate').textContent="Quote after review"; }
- const booking={id:id(),name:f('customerName'),phone:f('phone'),service:f('service'),county:f('county'),location:f('location'),date:f('date'),time:f('time'),details:f('details'),urgency:f('urgency'),budget:f('budget'),status:"Pending",assistant:"",quote:"",adminNotes:"",createdAt:new Date().toISOString()};
- const all=loadBookings();all.unshift(booking);saveBookings(all);
- const s=document.getElementById('bookingSuccess');s.classList.remove('hidden');s.innerHTML=`<strong>Request submitted!</strong><br>Your reference is <strong>${esc(booking.id)}</strong>. Status: <strong>Pending review</strong>. Save your reference and use the “My bookings” tab to check progress on this device. Our team must confirm the quote and availability before the booking is accepted.`;
- e.target.reset();document.getElementById('service').value=selectedService;document.querySelectorAll('.service').forEach(b=>b.classList.toggle('selected',b.dataset.service===selectedService));updateEstimate();renderAdmin();toast("Booking request saved");
-});
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 function showView(v){document.getElementById('homeView').classList.toggle('hidden',v!=='home');document.getElementById('trackView').classList.toggle('hidden',v!=='track');document.getElementById('adminView').classList.toggle('hidden',v!=='admin');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v==='admin')renderAdmin();if(v==='track')document.getElementById('lookupPhone').focus({preventScroll:true});window.scrollTo({top:0,behavior:'smooth'})}
 document.getElementById('lookupBtn').addEventListener('click',renderCustomerBookings);
