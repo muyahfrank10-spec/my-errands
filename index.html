@@ -124,8 +124,7 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY
 );
- 
-const counties = [
+ const counties = [
   "Baringo","Bomet","Bungoma","Busia","Elgeyo-Marakwet",
   "Embu","Garissa","Homa Bay","Isiolo","Kajiado","Kakamega",
   "Kericho","Kiambu","Kilifi","Kirinyaga","Kisii","Kisumu",
@@ -136,7 +135,6 @@ const counties = [
   "Tharaka-Nithi","Trans Nzoia","Turkana","Uasin Gishu",
   "Vihiga","Wajir","West Pokot"
 ];
-
 const statusClass = {"Pending":"pending","Accepted":"accepted","In progress":"progress","Completed":"completed","Cancelled":"cancelled"};
 const countySelect = document.getElementById('county');
 counties.forEach(c=>{const o=document.createElement('option');o.textContent=c;o.value=c;countySelect.appendChild(o)});
@@ -151,16 +149,12 @@ function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 function money(v){return "KSh "+Number(v||0).toLocaleString("en-KE")}
 function fmtDate(d){if(!d)return "—";return new Date(d+"T00:00:00").toLocaleDateString("en-KE",{day:"numeric",month:"short",year:"numeric"})}
 document.querySelectorAll('.service').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.service').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selectedService=btn.dataset.service;document.getElementById('service').value=selectedService;updateEstimate()}));
-
 document.getElementById('bookingForm').addEventListener('submit', async e => {
   e.preventDefault();
-
   const form = e.currentTarget;
   const submitButton = form.querySelector('button[type="submit"]');
   const successBox = document.getElementById('bookingSuccess');
-
   const value = id => document.getElementById(id).value.trim();
-
   const budgetText = value('budget');
 
   const booking = {
