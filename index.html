@@ -85,7 +85,15 @@
     <section class="section"><div class="section-head"><div><h2>My bookings</h2><p class="sub">Look up your requests using your phone number.</p></div></div>
       <div class="panel">
         <div class="row"><div class="field" style="flex:1;min-width:210px"><label for="lookupPhone">Private tracking token</label>
-<input id="lookupPhone" placeholder="Paste your 64-character token"> style="align-self:end">Find bookings</button></div>
+
+<div class="row">
+  <div class="field" style="flex:1;min-width:210px">
+    <label for="lookupPhone">Private tracking token</label>
+    <input id="lookupPhone" placeholder="Paste your 64-character token" autocomplete="off">
+  </div>
+  <button class="btn primary" id="lookupBtn" type="button" style="align-self:end">Find booking</button>
+</div>
+          
         <div id="customerBookings" class="section"><div class="empty">Enter your phone number to view your bookings on this device.</div></div>
       </div>
     </section>
