@@ -378,9 +378,51 @@ async function renderCustomerBookings() {
       'We could not check the booking right now. Please try again later.';
   }
 
-}
-document.getElementById('adminLogin').addEventListener('click',()=>{if(document.getElementById('adminPin').value==='2468'){adminUnlocked=true;document.getElementById('adminGate').classList.add('hidden');document.getElementById('adminContent').classList.remove('hidden');renderAdmin();toast('Demo dashboard opened')}else toast('Incorrect passcode')});
-document.getElementById('adminPin').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('adminLogin').click()});
+document.getElementById('adminLogin').addEventListener('click', async () => {
+  const email = document.getElementById('adminEmail').value.trim();
+  const password = document.getElementById('adminPassword').value;
+  const message = document.getElementById('adminLoginMessage');
+
+  if (!supabaseClient) {
+    message.textContent = 'Connection error. Please try again later.';
+    return;
+  }
+
+  message.textContent = 'Signing in...';
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    message.textContent = 'Sign-in failed. Check your email and password.';
+    return;
+  }
+
+  const { data: profile, error: profileError } = await supabaseClient
+    .from('profiles')
+    .select('role')
+    .eq('user_id', data.user.id)
+    .maybeSingle();
+
+  if (profileError || profile?.role !== 'admin') {
+    await supabaseClient.auth.signOut();
+    message.textContent = 'Access denied. Administrator access is required.';
+    return;
+  }
+
+  adminUnlocked = true;
+  document.getElementById('adminGate').classList.add('hidden');
+  document.getElementById('adminContent').classList.remove('hidden');
+  message.textContent = 'Signed in successfully.';
+  renderAdmin();
+});
+document.getElementById('adminPassword').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    document.getElementById('adminLogin').click();
+  }
+});
 document.getElementById('statusTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-filter]');if(!b)return;currentFilter=b.dataset.filter;document.querySelectorAll('#statusTabs button').forEach(x=>x.classList.toggle('active',x===b));renderAdmin()});
 function renderAdmin(){if(!adminUnlocked)return;const all=loadBookings();const statuses=["Pending","Accepted","In progress","Completed","Cancelled"];document.getElementById('stats').innerHTML=[["Total requests",all.length],["Pending",all.filter(b=>b.status==="Pending").length],["In progress",all.filter(b=>b.status==="In progress").length],["Completed",all.filter(b=>b.status==="Completed").length]].map(x=>`<div class="stat"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join('');const rows=all.filter(b=>currentFilter==="All"||b.status===currentFilter);document.getElementById('adminEmpty').classList.toggle('hidden',rows.length>0);document.getElementById('adminRows').innerHTML=rows.map(b=>`<tr><td><strong>${esc(b.id)}</strong><br><span class="pill ${statusClass[b.status]||''}">${esc(b.status)}</span><br><small>${new Date(b.createdAt).toLocaleDateString('en-KE')}</small></td><td><strong>${esc(b.name)}</strong><br>${esc(b.phone)}</td><td><strong>${esc(b.service)}</strong><br>${esc(b.county)}, ${esc(b.location)}<br><small>${b.budget?`Item budget: ${money(b.budget)}`:''}</small></td><td><strong>${fmtDate(b.date)}</strong><br>${esc(b.time)}<p style="max-width:230px;margin:5px 0">${esc(b.details)}</p><small>${esc(b.urgency)}</small></td><td style="min-width:220px"><div class="field"><label>Status</label><select data-id="${esc(b.id)}" data-key="status">${statuses.map(s=>`<option ${b.status===s?'selected':''}>${s}</option>`).join('')}</select></div><div class="field" style="margin-top:7px"><label>Assigned assistant</label><input data-id="${esc(b.id)}" data-key="assistant" value="${esc(b.assistant)}" placeholder="Assistant name / ID"></div><div class="field" style="margin-top:7px"><label>Service quote (KSh)</label><input data-id="${esc(b.id)}" data-key="quote" type="number" min="0" value="${esc(b.quote)}" placeholder="Enter quote"></div><div class="field" style="margin-top:7px"><label>Customer update / admin note</label><input data-id="${esc(b.id)}" data-key="adminNotes" value="${esc(b.adminNotes)}" placeholder="e.g. Please confirm availability"></div><button class="btn primary" style="margin-top:8px;padding:8px 11px" onclick="saveBooking('${esc(b.id)}')">Save updates</button></td></tr>`).join('')}
 window.saveBooking=function(bookingId){const all=loadBookings();const b=all.find(x=>x.id===bookingId);if(!b)return;document.querySelectorAll(`[data-id="${bookingId}"][data-key]`).forEach(el=>b[el.dataset.key]=el.value);if(b.status==="Accepted"&&!b.assistant)toast('Tip: assign an assistant before confirming');saveBookings(all);renderAdmin();toast('Booking updated')};
