@@ -257,7 +257,6 @@ document.getElementById('bookingForm').addEventListener('submit', async e => {
     submitButton.textContent = 'Submit booking request →';
   }
 });
-
 function updateEstimate(){document.getElementById('estimate').textContent="Quote after review"; }
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 function showView(v){document.getElementById('homeView').classList.toggle('hidden',v!=='home');document.getElementById('trackView').classList.toggle('hidden',v!=='track');document.getElementById('adminView').classList.toggle('hidden',v!=='admin');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v==='admin')renderAdmin();if(v==='track')document.getElementById('lookupPhone').focus({preventScroll:true});window.scrollTo({top:0,behavior:'smooth'})}
