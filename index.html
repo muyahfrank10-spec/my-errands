@@ -119,10 +119,14 @@
 const SUPABASE_URL = "https://keekaeagrknaymbhrxtu.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_UVoxdP5fM3ISBBK0hH0pww_ZOZMhKDS";
 
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY
-);
+
+const supabaseClient = window.supabase?.createClient
+  ? window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    )
+  : null;
+
  const counties = [
   "Baringo","Bomet","Bungoma","Busia","Elgeyo-Marakwet",
   "Embu","Garissa","Homa Bay","Isiolo","Kajiado","Kakamega",
