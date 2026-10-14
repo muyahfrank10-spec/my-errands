@@ -103,9 +103,40 @@
     <section class="section">
       <div class="section-head"><div><h2>Admin dashboard</h2><p class="sub">Review requests, assign assistants, confirm quotes and update status.</p></div><button class="btn" id="exportBtn">Export CSV</button></div>
       <div id="adminGate" class="panel">
-        <h3>Owner access</h3><p class="sub">This demo dashboard uses a local demo passcode. Replace it with real server-side authentication before public launch.</p>
-        <div class="row" style="margin-top:12px"><div class="field" style="max-width:300px;flex:1"><label for="adminPin">Demo passcode</label><input id="adminPin" type="password" placeholder="Enter demo passcode"></div><button class="btn primary" id="adminLogin" style="align-self:end">Open dashboard</button></div>
-        <p class="hint">Demo passcode: <strong>2468</strong></p>
+  <h3>Owner sign in</h3>
+  <p class="sub">Sign in with your authorized My Errands administrator account.</p>
+
+  <div class="field" style="margin-top:12px">
+    <label for="adminEmail">Administrator email</label>
+    <input
+      id="adminEmail"
+      type="email"
+      placeholder="Enter your email"
+      autocomplete="username"
+    >
+  </div>
+
+  <div class="field" style="margin-top:12px">
+    <label for="adminPassword">Password</label>
+    <input
+      id="adminPassword"
+      type="password"
+      placeholder="Enter your password"
+      autocomplete="current-password"
+    >
+  </div>
+
+  <button
+    class="btn primary"
+    id="adminLogin"
+    style="margin-top:14px"
+  >
+    Sign in
+  </button>
+
+  <p class="hint" id="adminLoginMessage">
+    Use the email and password for your Supabase account.
+  </p>
       </div>
       <div id="adminContent" class="hidden">
         <div class="stats" id="stats"></div>
